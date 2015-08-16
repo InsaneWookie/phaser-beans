@@ -21,7 +21,13 @@
 
     ],
 
+    beanGroup: null,
+
     playArea: new Phaser.Point(96, 192),
+
+    rotateRight: true,
+
+    rotateAngle: 270,
 
     create: function () {
       this.input.onDown.add(this.onInputDown, this);
@@ -31,9 +37,15 @@
       //graphics.lineStyle(2, 0x0FF0FF, 1);
       //graphics.drawRect(50, 250, 100, 100);
 
-      this.currentBean.primary = this.game.add.sprite(48, 16, 'redbean');
-      this.currentBean.secondary = this.game.add.sprite(0, 0, 'yellowbean');
+      this.currentBean.primary = this.game.add.sprite(0, 0, 'redbean');
+      this.currentBean.secondary = this.game.add.sprite(0, -16, 'yellowbean');
 
+      this.beanGroup = this.game.add.group();
+      this.beanGroup.add(this.currentBean.primary);
+      this.beanGroup.add(this.currentBean.secondary);
+
+      this.beanGroup.position.x = 48;
+      this.beanGroup.position.y = 64; //16;
       //generate grid?
 
 
@@ -54,14 +66,14 @@
       var rightKey = this.game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
 
       leftKey.onDown.add(function(){
-        if(this.currentBean.primary.position.x > this.leftArea.x) {
-          this.currentBean.primary.position.x -= this.currentBean.primary.width;
+        if(this.beanGroup.position.x > this.leftArea.x) {
+          this.beanGroup.position.x -= this.currentBean.primary.width;
         }
       }, this);
 
       rightKey.onDown.add(function(){
-        if(this.currentBean.primary.position.x < this.leftArea.width) {
-          this.currentBean.primary.position.x += this.currentBean.primary.width;
+        if(this.beanGroup.position.x < this.leftArea.width) {
+          this.beanGroup.position.x += this.currentBean.primary.width;
         }
       }, this);
 
@@ -69,6 +81,9 @@
       this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR).onDown.add(function(){
         var p = this.currentBean.place;
         this.currentBean.place = (p === 'up') ? 'right' : (p === 'right') ? 'down' : (p === 'down') ? 'left' : 'up';
+
+
+
       }, this);
 
       this.leftArea = new Phaser.Rectangle(16,16, this.playArea.x,this.playArea.y);
@@ -76,6 +91,14 @@
 
 
       this.lastBeanTime = this.game.time.time;
+
+
+
+//cant get the tween to work correctly
+      //var tween = this.game.add.tween(this.currentBean.secondary).to({x: [0, -16], y: [16, 0]}, 5000, Phaser.Easing.Linear.None/*, true, 0, Infinity, true*/);
+      //tween.interpolation(Phaser.Math.bezierInterpolation);
+      ////tween.repeat(Infinity);
+      //tween.start();
     },
 
     update: function (time) {
@@ -86,8 +109,8 @@
       if (this.game.time.elapsedSince(this.lastBeanTime) > this.beanTick) {
         //if((this.game.time.time - this.lastBeanTime) > this.beanTick){
         //move the bean
-        if (this.currentBean.primary.position.y < (this.leftArea.height)) {
-          this.currentBean.primary.position.y += this.currentBean.primary.height;
+        if (this.beanGroup.position.y < (this.leftArea.height)) {
+          this.beanGroup.position.y += this.currentBean.primary.height;
         }
             this.lastBeanTime = this.game.time.time;
       }
@@ -108,20 +131,30 @@
         this.currentBean.secondary.position.y = this.currentBean.primary.position.y;
 
       } else if(this.currentBean.place === 'right') {
-        this.currentBean.secondary.position.x = this.currentBean.primary.position.x + 16;
-        this.currentBean.secondary.position.y = this.currentBean.primary.position.y;
+        //this.currentBean.secondary.position.x = this.currentBean.primary.position.x + 16;
+        //this.currentBean.secondary.position.y = this.currentBean.primary.position.y;
 
       }
 
-      //if (this.game.input.keyboard.isDown(Phaser.Keyboard.LEFT)) {
-      //  this.bean.position -= this.bean.width;
-      //}
-      //else if (this.game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)) {
-      //  this.bean.position += this.bean.width;
-      //}
+      if(this.rotateRight){
+        if(this.currentBean.place === 'right' && this.rotateAngle >= 270 && this.rotateAngle < 360){
+
+          this.rotateAngle += 500 * (this.game.time.elapsed / 1000);
+          var radius = 16;
+          var x = radius * Math.cos(this.rotateAngle * Math.PI / 180);
+          var y = radius * Math.sin(this.rotateAngle * Math.PI / 180);
+
+          this.currentBean.secondary.position.x = x;
+          this.currentBean.secondary.position.y = y;
+        } else if(this.currentBean.place === 'up'){
+          this.rotateAngle = 270;
+        }
+
+      }
 
 
-      this.game.debug.text(this.currentBean.primary.position || '--', 2, 14, "#00ff00");
+      this.game.debug.text(this.rotateAngle || '--', 2, 14, "#00ff00");
+      this.game.debug.text(this.currentBean.place || '--', 2, 28, "#00ff00");
       //this.game.debug.text(this.game.time.fps || '--', 2, 14, "#00ff00");
       //this.game.debug.text("Tween running: " + !this.idleBallTween.pendingDelete, 2, 110);
 
